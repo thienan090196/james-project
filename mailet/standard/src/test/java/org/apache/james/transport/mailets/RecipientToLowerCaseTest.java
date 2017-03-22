@@ -20,6 +20,10 @@
 package org.apache.james.transport.mailets;
 
 import static  org.assertj.core.api.Assertions.assertThat;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.apache.mailet.MailAddress;
 import org.apache.mailet.base.test.FakeMail;
 import org.junit.Before;
@@ -37,13 +41,21 @@ public class RecipientToLowerCaseTest {
     @Test
     public void serviceShouldPutRecipientToLowerCase() throws Exception {	
     	FakeMail fakeMail = FakeMail.builder()
-    		.recipient(new MailAddress("thiEnan123@gmail.com"))
+    		.recipient(new MailAddress("THienan123@gmail.com"))
     		.build();
     	
     	testee.service(fakeMail);
     	
-    	assertThat(fakeMail.getRecipients())
-    		.containsOnly(new MailAddress("thienan123@gmail.com"));
+    	Collection<MailAddress> mail = fakeMail.getRecipients();
+    			
+    	ArrayList<String> resultAsString = new ArrayList<String>();
+    	
+    	for (MailAddress address : mail) {
+    		resultAsString.add(address.toString());
+    	}
+    	
+    	assertThat(resultAsString)
+    		.containsOnly("thienan123@gmail.com");
     }
 
     @Test
