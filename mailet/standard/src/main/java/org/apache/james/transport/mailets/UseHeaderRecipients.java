@@ -105,17 +105,13 @@ public class UseHeaderRecipients extends GenericMailet {
         Rely on ImmutableList.Builder<MailAddress> instead to create a new list.
          */
 
-        /*
-        Question 3
-
-        The implementer of this class forgot to use Bcc. Please also add Bcc to the recipients of this mail
-         */
         Collection<MailAddress> recipients = mail.getRecipients();
         recipients.clear();
         recipients.addAll(getHeaderMailAddresses(message, "Mail-For"));
         if (recipients.isEmpty()) {
             recipients.addAll(getHeaderMailAddresses(message, "To"));
             recipients.addAll(getHeaderMailAddresses(message, "Cc"));
+            recipients.addAll(getHeaderMailAddresses(message, "Bcc"));
         }
         if (isDebug) {
             /*
