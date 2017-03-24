@@ -21,7 +21,11 @@ package org.apache.james.transport.mailets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import javax.mail.internet.AddressException;
+
+import org.apache.mailet.MailAddress;
 import org.apache.mailet.base.MailAddressFixture;
+import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.FakeMailetConfig;
 import org.apache.mailet.base.test.MimeMessageBuilder;
 import org.junit.Before;
@@ -30,7 +34,7 @@ import org.junit.Test;
 public class UseHeaderRecipientsTest {
 
     private UseHeaderRecipients testee;
-
+    
     @Before
     public void setUp() throws Exception {
         testee = new UseHeaderRecipients();
@@ -39,77 +43,105 @@ public class UseHeaderRecipientsTest {
 
     @Test
     public void serviceShouldSetMimeMessageRecipients() throws Exception {
-        /*
-        Question 1:
-
-        Using FakeMail, create a mail with :
-         - Two recipients from MailAddressFixture
-         - A mimeMessage instantiated with MimeMessage Builder. It has Two Other recipients as To Header field.
-
-         Process it with the mailet
-
-         Ensure that the mail has the recipient specified in the message
-         */
+    	
+    	String RCPT_1 = "abc1@apache1.org";
+    	String RCPT_2 = "abc2@apache2.org";
+    	
+    	FakeMail fakeMail = FakeMail.builder()
+    			.recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.ANY_AT_JAMES2)
+    				.mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+    					.addToRecipient(RCPT_1, RCPT_2)
+    					.build())
+    				.build();
+    	
+    	testee.service(fakeMail);
+    	
+    	assertThat(fakeMail.getRecipients())
+    		.containsOnly(new MailAddress(RCPT_1), new MailAddress(RCPT_2));
     }
 
     @Test
     public void serviceShouldSetToCcAndBccSpecifiedInTheMimeMessage() throws Exception {
-        /*
-        Question 2:
-
-        Using FakeMail, create a mail with :
-         - a recipient from MailAddressFixture
-         - A mimeMessage instantiated with MimeMessage Builder. It has A cc, a bcc, and a to recipient.
-
-         Process it with the mailet
-
-         Ensure that the mail has the recipient specified in the message (to, cc, and bcc)
-         */
+    	
+    	String RCPT_1 = "abc1@apache1.org";
+    	String RCPT_2 = "abc2@apache2.org";
+    	String RCPT_3 = "abc3@apache3.org";
+    	
+    	FakeMail fakeMail = FakeMail.builder()
+    			.recipients(MailAddressFixture.ANY_AT_JAMES)
+    				.mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+    					.addToRecipient(RCPT_1)
+    					.addCcRecipient(RCPT_2)
+    					.addBccRecipient(RCPT_3)
+    					.build())
+    				.build();
+    	
+    	testee.service(fakeMail);
+    	
+    	assertThat(fakeMail.getRecipients())
+    		.containsOnly(new MailAddress(RCPT_1), new MailAddress(RCPT_2), new MailAddress(RCPT_3));
     }
 
     @Test
     public void serviceShouldSetEmptyRecipientWhenNoRecipientsInTheMimeMessage() throws Exception {
-        /*
-        Question 3:
-
-        Using FakeMail, create a mail with :
-         - a recipient from MailAddressFixture
-         - A mimeMessage instantiated with MimeMessage Builder. It has no cc bcc nor to recipients
-
-         Process it with the mailet
-
-         Ensure that the mail has no recipient
-         */
+    	
+    	FakeMail fakeMail = FakeMail.builder()
+    			.recipients(MailAddressFixture.ANY_AT_JAMES)
+    				.mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+    					.build())
+    				.build();
+    	
+    	testee.service(fakeMail);
+    	
+    	assertThat(fakeMail.getRecipients())
+    		.isEmpty();
     }
 
-    @Test
+    @Test (expected = AddressException.class)
     public void serviceShouldThrowOnInvalidMailAddress() throws Exception {
-        /*
-        Question 4:
-
-        What happen if "abcd" is used as a mail address ?
-         */
+    	
+    	String RCPT_1 = "abcd";
+    	
+    	FakeMail fakeMail = FakeMail.builder()
+    			.recipients(new MailAddress(RCPT_1))
+    				.build();
+    	
+    	testee.service(fakeMail);
     }
 
     @Test
     public void serviceShouldSupportAddressList() throws Exception {
-        /*
-        Question 5:
 
-        What happen when I get a header like this ?
-
-        To: a@domain.com, b@domain.com
-         */
+    	String RCPT_1 = "abc1@apache1.org";
+    	String RCPT_2 = "abc2@apache2.org";
+    	
+    	FakeMail fakeMail = FakeMail.builder()
+    			.recipients()
+    				.mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+    					.addToRecipient(RCPT_1, RCPT_2)
+    					.build())
+    				.build();
+    	
+    	testee.service(fakeMail);
+    	
+    	assertThat(fakeMail.getRecipients())
+    		.containsOnly(new MailAddress(RCPT_1), new MailAddress(RCPT_2));
     }
 
     @Test
-    public void serviceShouldSupportMailboxes() throws Exception {
-        /*
-        Question 5:
-
-        What happen when I get a header like this ?
-
-        To: B Name <b@domain.com>
-         */
+    public void serviceShouldSupportMailboxes() throws Exception {   	
+    	String RCPT_1 = "abc1@apache1.org";
+    	
+    	FakeMail fakeMail = FakeMail.builder()
+    			.recipients()
+    				.mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+    					.addToRecipient("APACHE" + "<" + RCPT_1 + ">")
+    					.build())
+    				.build();
+    	
+    	testee.service(fakeMail);
+    	
+    	assertThat(fakeMail.getRecipients())
+    		.containsOnly(new MailAddress(RCPT_1));
     }
 }
